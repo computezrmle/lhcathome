@@ -326,7 +326,7 @@ function create_local_wpad {
     if ! curl --connect-timeout 2 -m 10 --retry 3 --retry-all-errors \
         -s --noproxy localhost http://localhost/ > /dev/null 2>&1; then
         echo "Local webserver did not start."
-        boinc_shutdown 206
+        boinc_shutdown 206 ${sd_delay}
     fi
 
     # prefer proxies set by grid-wpad
@@ -570,7 +570,7 @@ function probe_cvmfs_repos {
     cat "${my_tmp_dir}/message_probe_"*
     if grep -v '^0$' <(cat "${my_tmp_dir}/result_probe_"* 2>&1) >/dev/null 2>&1; then
         echo "Probing CVMFS repositories failed"
-        boinc_shutdown 206
+        boinc_shutdown 206 ${sd_delay}
     fi
 
     # cleanup
@@ -584,12 +584,12 @@ function probe_cvmfs_repos {
 
 separator="******************************************************************"
 
-start_webserver &
-create_local_wpad
-
 cvmfs_in_container=0
 # used as '$2' in 'boinc_shutdown'
 sd_delay=$(shuf -n 1 -i 787-983)
+
+start_webserver &
+create_local_wpad
 
 # replace delimiters with ' '
 REPOS="${REPOS//,/ }"
@@ -686,7 +686,7 @@ else
         echo "CVMFS_PAC_URLS=\"http://localhost/wpad.dat\"" >> "${config_file}"
     else
         echo "Proxy configuration failed."
-        boinc_shutdown 206
+        boinc_shutdown 206 ${sd_delay}
     fi
 
     cvmfs_quota=$(grep -Pom1 'CVMFS_QUOTA_LIMIT=[^0-9]*\K[0-9]+' \
@@ -794,7 +794,6 @@ if [ -f ${SLOT_DIR}/shared/output.tgz ]; then
     boinc_shutdown 0 ${sd_delay}
 else
     echo "Job Failed"
-    # 208 EXIT_SUB_TASK_FAILURE
-    #
+    # EXIT_SUB_TASK_FAILURE
     boinc_shutdown 208 ${sd_delay}
 fi
